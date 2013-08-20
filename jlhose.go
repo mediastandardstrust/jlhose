@@ -28,20 +28,15 @@ type article struct {
 	// internal article id
 	id string
 	// internal channel
-	channel string
-	// Permalink is the canonical URL
-	Permalink string
-	// Title is the article headline
-	Title       string
-	LastScraped time.Time
-	Published   time.Time
-	Source      string
-	Urls        []string
-	Journalists []string
-	Content     string
-	// TODO: more fields!
-	//  - journalisted url
-	//  - publication info:  pretty name, home url etc..
+	channel     string
+	Permalink   string    `json:"permalink"`
+	Title       string    `json:"title"`
+	Content     string    `json:"text"`
+	LastScraped time.Time `json:"lastscraped"`
+	Published   time.Time `json:"published"`
+	Source      string    `json:"source"`
+	Urls        []string  `json:"urls"`
+	Journalists []string  `json:"journalists"`
 }
 
 func (art *article) Id() string {
