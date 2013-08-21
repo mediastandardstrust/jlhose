@@ -157,8 +157,11 @@ func (repo *articleRepository) Replay(channel, lastEventId string) (events chan 
 	}()
 	go func() {
 		defer close(stream)
-		last := repo.streamArticles(channel, lastEventId, stream)
-		glog.Infof("Finished Replaying Channel: %s from Last-Event-ID: %s To: %s", channel, lastEventId, last.id)
+		if last := repo.streamArticles(channel, lastEventId, stream); last != nil {
+			glog.Infof("Finished Replaying Channel: %s from Last-Event-ID: %s To: %s", channel, lastEventId, last.id)
+		} else {
+			glog.Infof("Nothing to replay")
+		}
 	}()
 	return
 }
