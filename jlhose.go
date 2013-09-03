@@ -25,22 +25,21 @@ var interval = flag.Duration("interval", 5*time.Second, "delay between monitor p
 
 // article encodes article data we want to stream out as events
 type article struct {
-	// internal article id
-	id string
+	JournalistedId string    `json:"id"`
+	Permalink      string    `json:"permalink"`
+	Title          string    `json:"title"`
+	Content        string    `json:"text"`
+	LastScraped    time.Time `json:"lastscraped"`
+	Published      time.Time `json:"published"`
+	Source         string    `json:"source"`
+	Urls           []string  `json:"urls"`
+	Journalists    []string  `json:"journalists"`
 	// internal channel
-	channel     string
-	Permalink   string    `json:"permalink"`
-	Title       string    `json:"title"`
-	Content     string    `json:"text"`
-	LastScraped time.Time `json:"lastscraped"`
-	Published   time.Time `json:"published"`
-	Source      string    `json:"source"`
-	Urls        []string  `json:"urls"`
-	Journalists []string  `json:"journalists"`
+	channel string
 }
 
 func (art *article) Id() string {
-	return art.id
+	return art.JournalistedId
 }
 
 func (art *article) Event() string {
@@ -126,13 +125,13 @@ func (repo *articleRepository) streamArticles(channel, lastEventId string, strea
 		for articles.Next() {
 			var art article
 			var urls, journalists string
-			if err := articles.Scan(&art.id, &art.Permalink, &art.Title, &art.Published, &art.LastScraped, &art.Source, &urls, &journalists, &art.Content, &art.channel); err != nil {
+			if err := articles.Scan(&art.JournalistedId, &art.Permalink, &art.Title, &art.Published, &art.LastScraped, &art.Source, &urls, &journalists, &art.Content, &art.channel); err != nil {
 				glog.Error(err)
 				return nil
 			}
 			art.Urls = strings.Split(urls, " ")
 			art.Journalists = strings.Split(journalists, ",")
-			glog.V(2).Infof("Got Channel: %s Id: %s", art.channel, art.id)
+			glog.V(2).Infof("Got Channel: %s Id: %s", art.channel, art.JournalistedId)
 			select {
 			case <-time.After(*timeout):
 				glog.Warning("Timeout on cursor pump")
@@ -158,7 +157,7 @@ func (repo *articleRepository) Replay(channel, lastEventId string) (events chan 
 	go func() {
 		defer close(stream)
 		if last := repo.streamArticles(channel, lastEventId, stream); last != nil {
-			glog.Infof("Finished Replaying Channel: %s from Last-Event-ID: %s To: %s", channel, lastEventId, last.id)
+			glog.Infof("Finished Replaying Channel: %s from Last-Event-ID: %s To: %s", channel, lastEventId, last.JournalistedId)
 		} else {
 			glog.Infof("Nothing to replay")
 		}
@@ -176,14 +175,14 @@ func (repo *articleRepository) Monitor(srv *eventsource.Server) {
 	glog.Infof("Monitoring from Id: %s onwards ", lastEventId)
 	go func() {
 		for art := range stream {
-			glog.Infof("Publishing Id: %s Channel: %s", art.id, art.channel)
+			glog.Infof("Publishing Id: %s Channel: %s", art.JournalistedId, art.channel)
 			srv.Publish([]string{"articles", art.channel}, art)
 		}
 	}()
 	for {
 		glog.V(2).Infof("Polling for anything after: %s", lastEventId)
 		if last := repo.streamArticles("articles", lastEventId, stream); last != nil {
-			lastEventId = last.id
+			lastEventId = last.JournalistedId
 		}
 		time.Sleep(*interval)
 	}
