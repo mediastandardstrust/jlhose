@@ -34,6 +34,7 @@ type article struct {
 	Source         string    `json:"source"`
 	Urls           []string  `json:"urls"`
 	Journalists    []string  `json:"journalists"`
+	Type           string    `json:"type"`
 	// internal channel
 	channel string
 }
@@ -129,6 +130,7 @@ func (repo *articleRepository) streamArticles(channel, lastEventId string, strea
 				glog.Error(err)
 				return nil
 			}
+			art.Type = "news article"
 			art.Urls = strings.Split(urls, " ")
 			art.Journalists = strings.Split(journalists, ",")
 			glog.V(2).Infof("Got Channel: %s Id: %s", art.channel, art.JournalistedId)
